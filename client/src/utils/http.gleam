@@ -3,7 +3,7 @@ import gleam/http/request
 import lustre/effect
 import lustre_http
 
-pub fn http_delete(url, expect) {
+pub fn delete(url, expect) {
   case request.to(url) {
     Ok(req) ->
       req |> request.set_method(http.Delete) |> lustre_http.send(expect)

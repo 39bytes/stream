@@ -2,7 +2,6 @@ import decipher
 import gleam/dynamic
 import gleam/http/request
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -14,7 +13,9 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import lustre_http
-import utils
+import tempo.{type DateTime}
+import tempo/datetime
+import utils/http as http_utils
 
 const api_url = "http://localhost:1234/api"
 
@@ -26,7 +27,7 @@ pub fn main() {
 }
 
 pub type Post {
-  Post(id: Int, content: String)
+  Post(id: Int, content: String, created_at: DateTime)
 }
 
 pub type User {
@@ -57,7 +58,10 @@ fn view(model: Model) -> Element(Msg) {
       html.h1([attribute.class("text-center text-2xl font-bold pb-8")], [
         html.text("🪷 jeff's stream"),
       ]),
-      view_create_post(),
+      case model.user {
+        Some(user) if user.admin -> view_create_post()
+        _ -> html.div([], [])
+      },
       view_posts_list(model),
     ]),
   ])
@@ -66,7 +70,10 @@ fn view(model: Model) -> Element(Msg) {
 fn view_header(model: Model) -> Element(Msg) {
   let contents = case model.user {
     Some(user) -> [
-      html.p([], [html.text(user.login)]),
+      html.div([attribute.class("flex gap-1 items-center")], [
+        github_icon(),
+        html.p([], [html.text(user.login)]),
+      ]),
       html.a([attribute.href(api_url <> "/auth/logout")], [html.text("Log out")]),
     ]
     None -> [
@@ -74,7 +81,14 @@ fn view_header(model: Model) -> Element(Msg) {
     ]
   }
 
-  html.header([attribute.class("flex gap-2 p-4 justify-end")], contents)
+  html.header(
+    [attribute.class("flex gap-2 p-4 justify-between w-full")],
+    contents,
+  )
+}
+
+fn github_icon() -> Element(Msg) {
+  html.img([attribute.src("public/assets/github.svg")])
 }
 
 fn view_create_post() -> Element(Msg) {
@@ -121,10 +135,14 @@ fn parse_markdown(content: String) -> String
 fn view_post(post: Post) {
   let handle_delete = fn(_) { UserDeletedPost(post.id) |> Ok }
 
-  html.div([attribute.class("p-4 border border-surface0 rounded-md")], [
+  html.div([attribute.class("p-4 border border-surface0 rounded-md my-2")], [
     html.div([attribute.class("flex justify-between")], [
-      html.div([attribute.class("text-subtext0")], [
-        html.text("id: " <> post.id |> int.to_string),
+      html.div([attribute.class("text-subtext0 text-sm")], [
+        html.text(
+          datetime.to_local(post.created_at)
+          |> tempo.accept_imprecision
+          |> datetime.format("MMM D, YYYY h:mma"),
+        ),
       ]),
       html.button(
         [
@@ -139,6 +157,9 @@ fn view_post(post: Post) {
         attribute.attribute(
           "dangerous-unescaped-html",
           parse_markdown(post.content),
+        ),
+        attribute.class(
+          "prose dark:prose-invert prose-headings:text-text prose-p:text-text prose-a:text-lavender hover:prose-a:text-lavender/70",
         ),
       ],
       [],
@@ -187,10 +208,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 fn post_decoder() {
-  dynamic.decode2(
+  dynamic.decode3(
     Post,
     dynamic.field("id", dynamic.int),
     dynamic.field("content", dynamic.string),
+    dynamic.field("created_at", datetime.from_dynamic_string),
   )
 }
 
@@ -242,5 +264,5 @@ fn create_post(content: String) -> Effect(Msg) {
 fn delete_post(id: Int) -> Effect(Msg) {
   let route = api_url <> "/posts/" <> int.to_string(id)
   let expect = lustre_http.expect_json(post_decoder(), ApiDeletedPost)
-  utils.http_delete(route, expect)
+  http_utils.delete(route, expect)
 }

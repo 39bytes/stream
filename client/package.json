@@ -3,6 +3,8 @@
 		"markdown-it": "^14.1.0"
 	},
 	"devDependencies": {
-		"@shikijs/markdown-it": "^1.24.4"
+		"@shikijs/markdown-it": "^1.24.4",
+		"@tailwindcss/typography": "^0.5.15",
+		"shiki": "^1.24.4"
 	}
 }
