@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+* Light theme: Catppuccin Latte
+* Dark theme: Catppuccin Mocha
+* https://github.com/catppuccin/catppuccin
+*/
+
+@layer base {
+    :root {
+        --color-rosewater: 11 59% 67%;
+        --color-flamingo: 0 60% 67%;
+        --color-pink: 316 73% 69%;
+        --color-mauve: 266 85% 58%;
+        --color-red: 347 87% 44%;
+        --color-maroon: 355 76% 59%;
+        --color-peach: 22 99% 52%;
+        --color-yellow: 35 77% 49%;
+        --color-green: 109 58% 40%;
+        --color-teal: 183 74% 35%;
+        --color-sky: 197 97% 46%;
+        --color-sapphire: 189 70% 42%;
+        --color-blue: 220 91% 54%;
+        --color-lavender: 231 97% 72%;
+        --color-text: 234 16% 35%;
+        --color-subtext1: 233 13% 41%;
+        --color-subtext0: 233 10% 47%;
+        --color-overlay2: 232 10% 53%;
+        --color-overlay1: 231 10% 59%;
+        --color-overlay0: 228 11% 65%;
+        --color-surface2: 227 12% 71%;
+        --color-surface1: 225 14% 77%;
+        --color-surface0: 223 16% 83%;
+        --color-background: 220 23% 95%;
+        --color-mantle: 220 22% 92%;
+        --color-crust: 220 21% 89%;
+    }
+
+    :root[class~="dark"] {
+        --color-rosewater: 10 56% 91%;
+        --color-flamingo: 0 59% 88%;
+        --color-pink: 316 72% 86%;
+        --color-mauve: 267 84% 81%;
+        --color-red: 343 81% 75%;
+        --color-maroon: 350 65% 77%;
+        --color-peach: 23 92% 75%;
+        --color-yellow: 41 86% 83%;
+        --color-green: 115 54% 76%;
+        --color-teal: 170 57% 73%;
+        --color-sky: 189 71% 73%;
+        --color-sapphire: 199 76% 69%;
+        --color-blue: 217 92% 76%;
+        --color-lavender: 232 97% 85%;
+        --color-text: 226 64% 88%;
+        --color-subtext1: 227 35% 80%;
+        --color-subtext0: 228 24% 72%;
+        --color-overlay2: 228 17% 64%;
+        --color-overlay1: 230 13% 55%;
+        --color-overlay0: 231 11% 47%;
+        --color-surface2: 233 12% 39%;
+        --color-surface1: 234 13% 31%;
+        --color-surface0: 237 16% 23%;
+        --color-background: 240 21% 15%;
+        --color-mantle: 240 21% 12%;
+        --color-crust: 240 23% 9%;
+    }
+
+    html {
+        @apply text-text;
+    }
+}

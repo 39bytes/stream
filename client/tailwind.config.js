@@ -1,0 +1,38 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./index.html", "./src/**/*.{gleam,mjs}"],
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        rosewater: "hsl(var(--color-rosewater) / <alpha-value>)",
+        flamingo: "hsl(var(--color-flamingo) / <alpha-value>)",
+        pink: "hsl(var(--color-pink) / <alpha-value>)",
+        mauve: "hsl(var(--color-mauve) / <alpha-value>)",
+        red: "hsl(var(--color-red) / <alpha-value>)",
+        maroon: "hsl(var(--color-maroon) / <alpha-value>)",
+        peach: "hsl(var(--color-peach) / <alpha-value>)",
+        yellow: "hsl(var(--color-yellow) / <alpha-value>)",
+        green: "hsl(var(--color-green) / <alpha-value>)",
+        teal: "hsl(var(--color-teal) / <alpha-value>)",
+        sky: "hsl(var(--color-sky) / <alpha-value>)",
+        sapphire: "hsl(var(--color-sapphire) / <alpha-value>)",
+        blue: "hsl(var(--color-blue) / <alpha-value>)",
+        lavender: "hsl(var(--color-lavender) / <alpha-value>)",
+        text: "hsl(var(--color-text) / <alpha-value>)",
+        subtext1: "hsl(var(--color-subtext1) / <alpha-value>)",
+        subtext0: "hsl(var(--color-subtext0) / <alpha-value>)",
+        overlay2: "hsl(var(--color-overlay2) / <alpha-value>)",
+        overlay1: "hsl(var(--color-overlay1) / <alpha-value>)",
+        overlay0: "hsl(var(--color-overlay0) / <alpha-value>)",
+        surface2: "hsl(var(--color-surface2) / <alpha-value>)",
+        surface1: "hsl(var(--color-surface1) / <alpha-value>)",
+        surface0: "hsl(var(--color-surface0) / <alpha-value>)",
+        background: "hsl(var(--color-background) / <alpha-value>)",
+        mantle: "hsl(var(--color-mantle) / <alpha-value>)",
+        crust: "hsl(var(--color-crust) / <alpha-value>)",
+      },
+    },
+  },
+  plugins: [],
+};
