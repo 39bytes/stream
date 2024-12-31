@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  use_doorkeeper
+  resources :passwords, param: :token
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -9,5 +9,10 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "posts#index"
 
-  resources :posts, only: [ :index, :create, :update, :destroy ]
+  resources :posts, only: [:index, :create, :update, :destroy]
+
+  get "auth/user", to: "sessions#user"
+  get "auth/login", to: "sessions#login"
+  get "auth/logout", to: "sessions#logout"
+  get "auth/authorized", to: "sessions#authorized"
 end

@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"markdown-it": "^14.1.0",
+		"marked": "^15.0.4"
+	},
+	"devDependencies": {
+		"@shikijs/markdown-it": "^1.24.4",
+		"shiki": "^1.24.4"
+	}
+}
