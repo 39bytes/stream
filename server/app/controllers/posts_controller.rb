@@ -4,7 +4,7 @@ class PostsController < ApplicationController
   skip_before_action :require_admin, only: %i[index]
 
   def index
-    @posts = Post.all
+    @posts = Post.order(created_at: :desc)
     render json: @posts
   end
 
