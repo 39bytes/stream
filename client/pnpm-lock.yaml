@@ -11,14 +11,8 @@ importers:
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.0
-      marked:
-        specifier: ^15.0.4
-        version: 15.0.4
     devDependencies:
       '@shikijs/markdown-it':
-        specifier: ^1.24.4
-        version: 1.24.4
-      shiki:
         specifier: ^1.24.4
         version: 1.24.4
 
@@ -97,11 +91,6 @@ packages:
 
   markdown-it@14.1.0:
     resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
-    hasBin: true
-
-  marked@15.0.4:
-    resolution: {integrity: sha512-TCHvDqmb3ZJ4PWG7VEGVgtefA5/euFmsIhxtD0XsBxI39gUSKL81mIRFdt0AiNQozUahd4ke98ZdirExd/vSEw==}
-    engines: {node: '>= 18'}
     hasBin: true
 
   mdast-util-to-hast@13.2.0:
@@ -281,8 +270,6 @@ snapshots:
       mdurl: 2.0.0
       punycode.js: 2.3.1
       uc.micro: 2.1.0
-
-  marked@15.0.4: {}
 
   mdast-util-to-hast@13.2.0:
     dependencies:

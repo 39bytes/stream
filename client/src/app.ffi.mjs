@@ -6,7 +6,7 @@ md.use(
   await Shiki({
     themes: {
       light: "catppuccin-latte",
-      dark: "catppuccin-mocha",
+      dark: "catppuccin-macchiato",
     },
   }),
 );
