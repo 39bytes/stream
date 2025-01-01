@@ -1,25 +1,25 @@
-import decipher
+import components/compose
 import gleam/dynamic
 import gleam/http/request
 import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/result
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
 import lustre_http
 import tempo.{type DateTime}
 import tempo/datetime
 import utils/http as http_utils
+import utils/markdown
 
 const api_url = "http://localhost:1234/api"
 
 pub fn main() {
+  let assert Ok(_) = compose.register()
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 
@@ -54,12 +54,13 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   html.div([], [
     view_header(model),
-    html.div([attribute.class("")], [
+    html.div([], [
       html.h1([attribute.class("text-center text-2xl font-bold pb-8")], [
         html.text("🪷 jeff's stream"),
       ]),
       case model.user {
-        Some(user) if user.admin -> view_create_post()
+        Some(user) if user.admin ->
+          compose.compose([compose.on_post(UserCreatedPost)])
         _ -> html.div([], [])
       },
       view_posts_list(model),
@@ -70,19 +71,40 @@ fn view(model: Model) -> Element(Msg) {
 fn view_header(model: Model) -> Element(Msg) {
   let contents = case model.user {
     Some(user) -> [
-      html.div([attribute.class("flex gap-1 items-center")], [
-        github_icon(),
-        html.p([], [html.text(user.login)]),
-      ]),
-      html.a([attribute.href(api_url <> "/auth/logout")], [html.text("Log out")]),
+      html.a(
+        [
+          attribute.class(
+            "flex gap-1 items-center border border-surface0 rounded-md px-2 py-1 hover:bg-surface0/50",
+          ),
+          attribute.href("https://github.com/" <> user.login),
+        ],
+        [github_icon(), html.p([], [html.text(user.login)])],
+      ),
+      html.a(
+        [
+          attribute.href(api_url <> "/auth/logout"),
+          attribute.class(
+            "border border-surface0 rounded-md px-2 py-1 hover:bg-surface0/50",
+          ),
+        ],
+        [html.text("Log out")],
+      ),
     ]
     None -> [
-      html.a([attribute.href(api_url <> "/auth/login")], [html.text("Log in")]),
+      html.a(
+        [
+          attribute.href(api_url <> "/auth/login"),
+          attribute.class(
+            "border border-surface0 rounded-md px-2 py-1 hover:bg-surface0/50 ml-auto",
+          ),
+        ],
+        [html.text("Log in")],
+      ),
     ]
   }
 
   html.header(
-    [attribute.class("flex gap-2 p-4 justify-between w-full")],
+    [attribute.class("flex gap-2 py-4 justify-between w-full")],
     contents,
   )
 }
@@ -91,46 +113,9 @@ fn github_icon() -> Element(Msg) {
   html.img([attribute.src("public/assets/github.svg")])
 }
 
-fn view_create_post() -> Element(Msg) {
-  let handle_click = fn(event) {
-    let path = ["target", "previousElementSibling", "value"]
-    event
-    |> decipher.at(path, dynamic.string)
-    |> result.map(UserCreatedPost)
-  }
-
-  html.div(
-    [
-      attribute.class(
-        "flex flex-col w-full items-end gap-4 border border-surface0 rounded-md p-4",
-      ),
-    ],
-    [
-      html.textarea(
-        [
-          attribute.class("bg-background resize-none w-full h-24 outline-none"),
-          attribute.name("content"),
-          attribute.placeholder("Any thoughts...?"),
-        ],
-        "",
-      ),
-      html.button(
-        [
-          attribute.class("px-3 py-1.5 bg-lavender rounded-md text-background"),
-          event.on("click", handle_click),
-        ],
-        [html.text("Post")],
-      ),
-    ],
-  )
-}
-
 fn view_posts_list(model: Model) {
   html.div([attribute.class("mt-8")], list.map(model.posts, view_post))
 }
-
-@external(javascript, "./app.ffi.mjs", "parse_markdown")
-fn parse_markdown(content: String) -> String
 
 fn view_post(post: Post) {
   let handle_delete = fn(_) { UserDeletedPost(post.id) |> Ok }
@@ -146,24 +131,15 @@ fn view_post(post: Post) {
       ]),
       html.button(
         [
-          attribute.class("text-subtext0 text-sm"),
+          attribute.class(
+            "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-red hover:text-text transition duration-200",
+          ),
           attribute.on("click", handle_delete),
         ],
         [html.text("Delete")],
       ),
     ]),
-    html.div(
-      [
-        attribute.attribute(
-          "dangerous-unescaped-html",
-          parse_markdown(post.content),
-        ),
-        attribute.class(
-          "prose dark:prose-invert prose-headings:text-text prose-p:text-text prose-a:text-lavender hover:prose-a:text-lavender/70",
-        ),
-      ],
-      [],
-    ),
+    markdown.markdown_view(post.content),
   ])
 }
 
