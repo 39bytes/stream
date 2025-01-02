@@ -2,7 +2,9 @@ import gleam/dynamic.{type Dynamic}
 import gleam/fetch.{type FetchError, type FetchResponse}
 import gleam/http
 import gleam/http/request.{type Request}
+import gleam/io
 import gleam/javascript/promise.{type Promise}
+import gleam/json
 import lustre/effect
 import lustre_http.{type Expect, NetworkError}
 
@@ -12,6 +14,21 @@ pub fn delete(url, expect) {
   case request.to(url) {
     Ok(req) ->
       req |> request.set_method(http.Delete) |> lustre_http.send(expect)
+    Error(_) ->
+      effect.from(fn(dispatch) {
+        dispatch(expect.run(Error(lustre_http.BadUrl(url))))
+      })
+  }
+}
+
+pub fn patch(url, body, expect) {
+  case request.to(url) {
+    Ok(req) ->
+      req
+      |> request.set_method(http.Patch)
+      |> request.set_header("Content-Type", "application/json")
+      |> request.set_body(json.to_string(body))
+      |> lustre_http.send(expect)
     Error(_) ->
       effect.from(fn(dispatch) {
         dispatch(expect.run(Error(lustre_http.BadUrl(url))))

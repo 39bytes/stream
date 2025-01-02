@@ -28,7 +28,7 @@ pub fn main() {
 }
 
 pub type Model {
-  Model(user: Option(User), posts: List(Post))
+  Model(user: Option(User), posts: List(Post), editing_post_id: Option(Int))
 }
 
 pub type Msg {
@@ -36,12 +36,19 @@ pub type Msg {
   ApiReturnedPosts(Result(List(Post), lustre_http.HttpError))
   ApiReturnedCreatedPost(Result(Post, lustre_http.HttpError))
   ApiDeletedPost(Result(Post, lustre_http.HttpError))
+  ApiEditedPost(Result(Post, lustre_http.HttpError))
   UserCreatedPost(content: String)
   UserDeletedPost(id: Int)
+  UserEditingPost(id: Int)
+  UserCancelledEdit
+  UserEditedPost(id: Int, content: String)
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  #(Model(user: None, posts: []), effect.batch([get_user(), get_posts()]))
+  #(
+    Model(user: None, posts: [], editing_post_id: None),
+    effect.batch([get_user(), get_posts()]),
+  )
 }
 
 fn render_if_admin(model: Model, element: Element(Msg)) {
@@ -60,7 +67,7 @@ fn view(model: Model) -> Element(Msg) {
       ]),
       render_if_admin(
         model,
-        compose.compose([compose.on_post(UserCreatedPost)]),
+        compose.compose([compose.on_confirm(UserCreatedPost)]),
       ),
       view_posts_list(model),
     ]),
@@ -142,31 +149,54 @@ fn view_posts_list(model: Model) {
 
 fn view_post(model: Model, post: Post) {
   let handle_delete = fn(_) { UserDeletedPost(post.id) |> Ok }
+  let handle_edit = fn(_) { UserEditingPost(post.id) |> Ok }
 
-  html.div([attribute.class("p-4 border border-surface0 rounded-md my-2")], [
-    html.div([attribute.class("flex justify-between")], [
-      html.div([attribute.class("text-subtext0 text-sm")], [
-        html.text(
-          datetime.to_local(post.created_at)
-          |> tempo.accept_imprecision
-          |> datetime.format("MMM D, YYYY h:mma"),
-        ),
-      ]),
-      render_if_admin(
-        model,
-        html.button(
-          [
-            attribute.class(
-              "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-red hover:text-text transition duration-200",
+  case model.editing_post_id {
+    Some(id) if id == post.id ->
+      compose.compose([
+        compose.on_confirm(UserEditedPost(id, _)),
+        compose.on_cancel(UserCancelledEdit),
+        compose.is_edit(True),
+        compose.initial_content(post.content),
+      ])
+    _ -> {
+      html.div([attribute.class("p-4 border border-surface0 rounded-md my-2")], [
+        html.div([attribute.class("flex justify-between")], [
+          html.div([attribute.class("text-subtext0 text-sm")], [
+            html.text(
+              datetime.to_local(post.created_at)
+              |> tempo.accept_imprecision
+              |> datetime.format("MMM D, YYYY h:mma"),
             ),
-            attribute.on("click", handle_delete),
-          ],
-          [html.text("Delete")],
-        ),
-      ),
-    ]),
-    markdown.markdown_view(post.content),
-  ])
+          ]),
+          render_if_admin(
+            model,
+            html.div([attribute.class("flex gap-x-2")], [
+              html.button(
+                [
+                  attribute.class(
+                    "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-lavender hover:text-text transition duration-200",
+                  ),
+                  attribute.on("click", handle_edit),
+                ],
+                [html.text("Edit")],
+              ),
+              html.button(
+                [
+                  attribute.class(
+                    "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-red hover:text-text transition duration-200",
+                  ),
+                  attribute.on("click", handle_delete),
+                ],
+                [html.text("Delete")],
+              ),
+            ]),
+          ),
+        ]),
+        markdown.markdown_view(post.content),
+      ])
+    }
+  }
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -206,6 +236,31 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Error(_) -> #(model, effect.none())
       }
     }
+    UserEditingPost(id) -> #(
+      Model(..model, editing_post_id: Some(id)),
+      effect.none(),
+    )
+    UserCancelledEdit -> #(Model(..model, editing_post_id: None), effect.none())
+    UserEditedPost(id, content) -> #(
+      Model(..model, editing_post_id: None),
+      edit_post(id, content),
+    )
+    ApiEditedPost(res) -> {
+      case res {
+        Ok(post) -> {
+          let posts =
+            model.posts
+            |> list.map(fn(p) {
+              case p.id == post.id {
+                True -> post
+                False -> p
+              }
+            })
+          #(Model(..model, posts:), effect.none())
+        }
+        Error(_) -> #(model, effect.none())
+      }
+    }
   }
 }
 
@@ -241,6 +296,17 @@ fn create_post(content: String) -> Effect(Msg) {
   let expect = lustre_http.expect_json(post.decoder(), ApiReturnedCreatedPost)
 
   lustre_http.post(
+    route,
+    json.object([#("content", json.string(content))]),
+    expect,
+  )
+}
+
+fn edit_post(id: Int, content: String) -> Effect(Msg) {
+  let route = api_url <> "/posts/" <> int.to_string(id)
+  let expect = lustre_http.expect_json(post.decoder(), ApiEditedPost)
+
+  http_utils.patch(
     route,
     json.object([#("content", json.string(content))]),
     expect,
