@@ -122,8 +122,16 @@ fn view_posts_list(model: Model) {
   )
 }
 
+@external(javascript, "./client.ffi.mjs", "do_confirm")
+fn confirm(msg: String) -> Bool
+
 fn view_post(model: Model, post: Post) {
-  let handle_delete = fn(_) { UserDeletedPost(post.id) |> Ok }
+  let handle_delete = fn(_) {
+    case confirm("Are you sure you want to delete this post?") {
+      True -> UserDeletedPost(post.id) |> Ok
+      False -> Error([])
+    }
+  }
   let handle_edit = fn(_) { UserEditingPost(post.id) |> Ok }
 
   case model.editing_post_id {
