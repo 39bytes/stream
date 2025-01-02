@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import mathjax from "markdown-it-mathjax3";
 import { fromHighlighter } from "@shikijs/markdown-it/core";
 import { createHighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/index.mjs";
@@ -32,6 +33,7 @@ md.use(
     },
   }),
 );
+md.use(mathjax);
 md.linkify.set({ fuzzyEmail: false });
 
 export function parse_markdown(content) {

@@ -87,3 +87,17 @@ html.dark .shiki span {
     font-weight: var(--shiki-dark-font-weight) !important;
     text-decoration: var(--shiki-dark-text-decoration) !important;
 }
+
+.MathJax {
+    color: hsl(var(--color-text));
+    display: inline-block;
+}
+
+div>.MathJax {
+    display: block;
+
+    svg {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
