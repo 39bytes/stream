@@ -4,7 +4,6 @@ import gleam/dynamic.{type Dynamic}
 import gleam/io
 import gleam/json
 import gleam/list
-import gleam/option.{type Option}
 import gleam/result
 import gleam/string
 import lustre
@@ -14,6 +13,7 @@ import lustre/element.{type Element, element}
 import lustre/element/html
 import lustre/event
 import lustre_http
+import model/attachment.{type Attachment}
 import utils/http.{api_url} as http_utils
 import utils/markdown
 
@@ -31,14 +31,6 @@ type Model {
 type Tab {
   Compose
   Preview
-}
-
-type Attachment {
-  Attachment(url: String)
-}
-
-fn attachment_decoder() {
-  dynamic.decode1(Attachment, dynamic.field("url", dynamic.string))
 }
 
 fn tab_to_string(tab: Tab) {
@@ -98,10 +90,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
-  view_compose_area(model)
-}
-
 pub fn compose(attributes: List(Attribute(msg))) {
   element(name, attributes, [])
 }
@@ -113,7 +101,7 @@ pub fn on_post(handler: fn(String) -> msg) -> Attribute(msg) {
   Ok(handler(content))
 }
 
-fn view_compose_area(model: Model) -> Element(Msg) {
+fn view(model: Model) -> Element(Msg) {
   let handle_post = fn(_) { Ok(UserClickedPost) }
 
   html.div(
@@ -227,7 +215,7 @@ fn replace_upload_placeholder(content: String, url: String) {
 fn upload_attachment(data: Dynamic) -> Effect(Msg) {
   let route = api_url <> "/attachments/upload"
   let expect =
-    lustre_http.expect_json(attachment_decoder(), ApiReturnedAttachmentLink)
+    lustre_http.expect_json(attachment.decoder(), ApiReturnedAttachmentLink)
 
   effect.from(http_utils.send_form_data(route, data, expect, _))
 }

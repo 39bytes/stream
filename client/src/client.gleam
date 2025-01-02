@@ -11,7 +11,9 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre_http
-import tempo.{type DateTime}
+import model/post.{type Post}
+import model/user.{type User}
+import tempo
 import tempo/datetime
 import utils/http.{api_url} as http_utils
 import utils/markdown
@@ -22,14 +24,6 @@ pub fn main() {
   let assert Ok(_) = lustre.start(app, "#app", Nil)
 
   Nil
-}
-
-pub type Post {
-  Post(id: Int, content: String, created_at: DateTime)
-}
-
-pub type User {
-  User(id: Int, login: String, name: String, email: Option(String), admin: Bool)
 }
 
 pub type Model {
@@ -49,6 +43,13 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
   #(Model(user: None, posts: []), effect.batch([get_user(), get_posts()]))
 }
 
+fn render_if_admin(model: Model, element: Element(Msg)) {
+  case model.user {
+    Some(user) if user.admin -> element
+    _ -> html.div([], [])
+  }
+}
+
 fn view(model: Model) -> Element(Msg) {
   html.div([], [
     view_header(model),
@@ -56,11 +57,10 @@ fn view(model: Model) -> Element(Msg) {
       html.h1([attribute.class("text-center text-2xl font-bold pb-8")], [
         html.text("🪷 jeff's stream"),
       ]),
-      case model.user {
-        Some(user) if user.admin ->
-          compose.compose([compose.on_post(UserCreatedPost)])
-        _ -> html.div([], [])
-      },
+      render_if_admin(
+        model,
+        compose.compose([compose.on_post(UserCreatedPost)]),
+      ),
       view_posts_list(model),
     ]),
   ])
@@ -112,10 +112,13 @@ fn github_icon() -> Element(Msg) {
 }
 
 fn view_posts_list(model: Model) {
-  html.div([attribute.class("mt-8")], list.map(model.posts, view_post))
+  html.div(
+    [attribute.class("mt-8")],
+    list.map(model.posts, view_post(model, _)),
+  )
 }
 
-fn view_post(post: Post) {
+fn view_post(model: Model, post: Post) {
   let handle_delete = fn(_) { UserDeletedPost(post.id) |> Ok }
 
   html.div([attribute.class("p-4 border border-surface0 rounded-md my-2")], [
@@ -127,14 +130,17 @@ fn view_post(post: Post) {
           |> datetime.format("MMM D, YYYY h:mma"),
         ),
       ]),
-      html.button(
-        [
-          attribute.class(
-            "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-red hover:text-text transition duration-200",
-          ),
-          attribute.on("click", handle_delete),
-        ],
-        [html.text("Delete")],
+      render_if_admin(
+        model,
+        html.button(
+          [
+            attribute.class(
+              "text-subtext0 text-sm border border-surface0 rounded-md px-2 py-1 hover:bg-red hover:text-text transition duration-200",
+            ),
+            attribute.on("click", handle_delete),
+          ],
+          [html.text("Delete")],
+        ),
       ),
     ]),
     markdown.markdown_view(post.content),
@@ -181,30 +187,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn post_decoder() {
-  dynamic.decode3(
-    Post,
-    dynamic.field("id", dynamic.int),
-    dynamic.field("content", dynamic.string),
-    dynamic.field("created_at", datetime.from_dynamic_string),
-  )
-}
-
-fn user_decoder() {
-  dynamic.decode5(
-    User,
-    dynamic.field("id", dynamic.int),
-    dynamic.field("login", dynamic.string),
-    dynamic.field("name", dynamic.string),
-    dynamic.field("email", dynamic.string |> dynamic.optional),
-    dynamic.field("admin", dynamic.bool),
-  )
-}
+// -----------
+// | Effects |
+// -----------
 
 fn get_user() -> Effect(Msg) {
   let route = api_url <> "/auth/user"
   let expect =
-    lustre_http.expect_json(dynamic.optional(user_decoder()), ApiReturnedUser)
+    lustre_http.expect_json(dynamic.optional(user.decoder()), ApiReturnedUser)
 
   lustre_http.get(route, expect)
 }
@@ -212,7 +202,7 @@ fn get_user() -> Effect(Msg) {
 fn get_posts() -> Effect(Msg) {
   let route = api_url
   let expect =
-    lustre_http.expect_json(dynamic.list(post_decoder()), ApiReturnedPosts)
+    lustre_http.expect_json(dynamic.list(post.decoder()), ApiReturnedPosts)
 
   case request.to(route) {
     Ok(req) -> req |> lustre_http.send(expect)
@@ -226,7 +216,7 @@ fn get_posts() -> Effect(Msg) {
 
 fn create_post(content: String) -> Effect(Msg) {
   let route = api_url <> "/posts"
-  let expect = lustre_http.expect_json(post_decoder(), ApiReturnedCreatedPost)
+  let expect = lustre_http.expect_json(post.decoder(), ApiReturnedCreatedPost)
 
   lustre_http.post(
     route,
@@ -237,6 +227,6 @@ fn create_post(content: String) -> Effect(Msg) {
 
 fn delete_post(id: Int) -> Effect(Msg) {
   let route = api_url <> "/posts/" <> int.to_string(id)
-  let expect = lustre_http.expect_json(post_decoder(), ApiDeletedPost)
+  let expect = lustre_http.expect_json(post.decoder(), ApiDeletedPost)
   http_utils.delete(route, expect)
 }
