@@ -1,3 +1,1 @@
-export function do_confirm(msg) {
-  return confirm(msg);
-}
+export const do_confirm = confirm;
