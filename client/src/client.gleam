@@ -13,10 +13,8 @@ import lustre/element/html
 import lustre_http
 import tempo.{type DateTime}
 import tempo/datetime
-import utils/http as http_utils
+import utils/http.{api_url} as http_utils
 import utils/markdown
-
-const api_url = "http://localhost:1234/api"
 
 pub fn main() {
   let assert Ok(_) = compose.register()

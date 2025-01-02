@@ -1,16 +1,20 @@
 import decipher
 import gleam/dict
-import gleam/dynamic
+import gleam/dynamic.{type Dynamic}
 import gleam/io
 import gleam/json
 import gleam/list
+import gleam/option.{type Option}
 import gleam/result
+import gleam/string
 import lustre
 import lustre/attribute.{type Attribute}
 import lustre/effect.{type Effect}
 import lustre/element.{type Element, element}
 import lustre/element/html
 import lustre/event
+import lustre_http
+import utils/http.{api_url} as http_utils
 import utils/markdown
 
 pub const name: String = "stream-compose"
@@ -29,6 +33,14 @@ type Tab {
   Preview
 }
 
+type Attachment {
+  Attachment(url: String)
+}
+
+fn attachment_decoder() {
+  dynamic.decode1(Attachment, dynamic.field("url", dynamic.string))
+}
+
 fn tab_to_string(tab: Tab) {
   case tab {
     Compose -> "Compose"
@@ -40,6 +52,8 @@ type Msg {
   UserChangedContent(content: String)
   UserClickedPost
   UserChangedTab(tab: Tab)
+  UserPastedAttachment(data: Dynamic, cursor_position: Int)
+  ApiReturnedAttachmentLink(Result(Attachment, lustre_http.HttpError))
 }
 
 fn init(_) -> #(Model, Effect(Msg)) {
@@ -54,6 +68,33 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     UserClickedPost -> #(model, event.emit("post", json.string(model.content)))
     UserChangedTab(tab) -> #(Model(..model, tab:), effect.none())
+    UserPastedAttachment(attachment, cursor_position) -> {
+      #(
+        Model(
+          ..model,
+          content: insert_upload_placeholder(model.content, cursor_position),
+        ),
+        upload_attachment(attachment),
+      )
+    }
+    ApiReturnedAttachmentLink(res) -> {
+      case res {
+        Ok(attachment) -> {
+          io.debug(attachment)
+          #(
+            Model(
+              ..model,
+              content: replace_upload_placeholder(model.content, attachment.url),
+            ),
+            effect.none(),
+          )
+        }
+        Error(e) -> {
+          io.debug(e)
+          #(model, effect.none())
+        }
+      }
+    }
   }
 }
 
@@ -122,6 +163,9 @@ fn view_tab(model: Model, tab: Tab) -> Element(Msg) {
   )
 }
 
+@external(javascript, "../files.ffi.mjs", "on_paste")
+fn on_paste(event: Dynamic) -> Dynamic
+
 fn view_edit_input(model: Model) -> Element(Msg) {
   let on_change = fn(event) {
     let path = ["target", "value"]
@@ -130,12 +174,22 @@ fn view_edit_input(model: Model) -> Element(Msg) {
     |> result.map(UserChangedContent)
   }
 
+  let handle_paste = fn(event) {
+    use cursor_position <- result.try(
+      event |> decipher.at(["target", "selectionStart"], dynamic.int),
+    )
+    let data = on_paste(event)
+
+    Ok(UserPastedAttachment(data:, cursor_position:))
+  }
+
   html.textarea(
     [
       attribute.class("bg-background resize-none w-full h-48 outline-none"),
       attribute.name("content"),
       attribute.placeholder("Any thoughts...?"),
       attribute.on("change", on_change),
+      event.on("paste", handle_paste),
     ],
     model.content,
   )
@@ -145,4 +199,35 @@ fn view_preview(model: Model) -> Element(Msg) {
   html.div([attribute.class("overflow-scroll h-48")], [
     markdown.markdown_view(model.content),
   ])
+}
+
+const upload_placeholder = "[[uploading]]"
+
+fn insert_upload_placeholder(content: String, cursor_position: Int) {
+  let #(before, after) =
+    content |> string.to_graphemes() |> list.split(cursor_position)
+
+  string.join(before, "") <> upload_placeholder <> string.join(after, "")
+}
+
+fn replace_upload_placeholder(content: String, url: String) {
+  // only in dev
+  let url =
+    string.replace(
+      url,
+      each: "http://localhost:1234",
+      with: "http://localhost:3000",
+    )
+
+  let replacement = "![image](" <> url <> ")"
+
+  string.replace(content, each: upload_placeholder, with: replacement)
+}
+
+fn upload_attachment(data: Dynamic) -> Effect(Msg) {
+  let route = api_url <> "/attachments/upload"
+  let expect =
+    lustre_http.expect_json(attachment_decoder(), ApiReturnedAttachmentLink)
+
+  effect.from(http_utils.send_form_data(route, data, expect, _))
 }

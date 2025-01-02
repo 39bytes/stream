@@ -15,4 +15,6 @@ Rails.application.routes.draw do
   get "auth/login", to: "sessions#login"
   get "auth/logout", to: "sessions#logout"
   get "auth/authorized", to: "sessions#authorized"
+
+  post "attachments/upload", to: "attachments#create"
 end
