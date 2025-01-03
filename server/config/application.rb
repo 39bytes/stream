@@ -32,5 +32,7 @@ module Server
     config.session_store :cookie_store, key: "_server_session"
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options
+
+    config.public_file_server.enabled = true
   end
 end
