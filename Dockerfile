@@ -60,8 +60,8 @@ FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS client
 WORKDIR /client
 COPY ./client .
 
-ARG API_URL=http://localhost:80
-ENV API_URL=${API_URL}
+ARG RAILWAY_PUBLIC_DOMAIN=http://localhost:80
+ENV API_URL=${RAILWAY_PUBLIC_DOMAIN}
 
 COPY --from=client-base node_modules node_modules
 RUN chmod +x gen_env.sh && sh gen_env.sh 
