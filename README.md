@@ -1,9 +1,9 @@
 # stream
 
-A small personal micro-blogging site.
-![image](https://github.com/user-attachments/assets/da443ad6-ddc5-4c41-9757-552957c00e1b)
-
-Supports Markdown, code syntax highlighting, MathJax, and pasting images from clipboard.
+A small personal micro-blogging site. Supports Markdown, code syntax highlighting, MathJax, and pasting images from clipboard.
+<div style="text-align: center;">
+  <img src="https://github.com/user-attachments/assets/b416a851-4124-465e-8820-5306fa542c2e" width="500" />
+</div>
 
 ### Running
 Install [just](https://github.com/casey/just), [Gleam](https://gleam.run/) and [Rails](https://rubyonrails.org/).
