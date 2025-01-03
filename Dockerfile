@@ -64,7 +64,7 @@ COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 COPY --from=client /client /client
 COPY --from=client /client/index.html /rails/public/index.html
-COPY --from=client /client/priv /rails/public/priv
+COPY --from=client /client/priv /rails/public/assets/priv
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
