@@ -54,7 +54,7 @@ ENV API_URL=${API_URL}
 
 WORKDIR /client
 COPY ./client .
-RUN chmod +x gen_env.sh && sh gen_env.sh && echo $API_URL && cat src/env.gleam && gleam run -m lustre/dev build
+RUN chmod +x gen_env.sh && sh gen_env.sh && gleam run -m lustre/dev build
 
 # Final stage for app image
 FROM base
