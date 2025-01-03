@@ -1,51 +1,33 @@
 # stream
 
-## server
+A small personal micro-blogging site.
+![image](https://github.com/user-attachments/assets/da443ad6-ddc5-4c41-9757-552957c00e1b)
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Supports Markdown, code syntax highlighting, MathJax, and pasting images from clipboard.
 
-Things you may want to cover:
+### Running
+Install [just](https://github.com/casey/just), [Gleam](https://gleam.run/) and [Rails](https://rubyonrails.org/).
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-## client
-
-[![Package Version](https://img.shields.io/hexpm/v/client)](https://hex.pm/packages/client)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/client/)
-
-```sh
-gleam add client@1
+Then set up the environment variables.
+For the client:
 ```
-```gleam
-import client
-
-pub fn main() {
-  // TODO: An example of the project in use
-}
+cd client
+mv .env.example .env
 ```
 
-Further documentation can be found at <https://hexdocs.pm/client>.
-
-## Development
-
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
+For the server, set up and configure a GitHub OAuth app, and set the environment variables accordingly.
 ```
+cd server
+mv .env.example .env
+```
+
+Then, from the root, run the client and the server.
+```
+just client
+just server
+```
+
+The dev server will be running at `http://localhost:1234`.
+
+### Prior Art
+Heavily inspired by my friend [Liam's project of the same name](https://github.com/terror/stream).
