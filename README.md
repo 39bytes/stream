@@ -1,6 +1,8 @@
 # stream
 
-A small personal micro-blogging site. Supports Markdown, code syntax highlighting, MathJax, and pasting images from clipboard.
+A small personal micro-blogging site. 
+
+Supports Markdown, code syntax highlighting, MathJax, and pasting images from clipboard.
 <div style="text-align: center;">
   <img src="https://github.com/user-attachments/assets/b416a851-4124-465e-8820-5306fa542c2e" width="500" />
 </div>
