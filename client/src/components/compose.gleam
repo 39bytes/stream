@@ -61,10 +61,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserChangedContent(content) -> {
       #(Model(..model, content:), effect.none())
     }
-    UserClickedConfirm -> #(
-      model,
-      event.emit("confirm", json.string(model.content)),
-    )
+    UserClickedConfirm -> {
+      #(
+        Model(..model, content: ""),
+        event.emit("confirm", json.string(model.content)),
+      )
+    }
     UserClickedCancel -> #(model, event.emit("cancel", json.null()))
     UserChangedTab(tab) -> #(Model(..model, tab:), effect.none())
     UserPastedAttachment(attachment, cursor_position) -> {
