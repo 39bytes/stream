@@ -1,5 +1,6 @@
 import components/compose
 import components/icons
+import env
 import gleam/dynamic
 import gleam/http/request
 import gleam/int
@@ -16,7 +17,7 @@ import model/post.{type Post}
 import model/user.{type User}
 import tempo
 import tempo/datetime
-import utils/http.{api_url} as http_utils
+import utils/http as http_utils
 import utils/markdown
 
 pub fn main() {
@@ -88,7 +89,7 @@ fn view_header(model: Model) -> Element(Msg) {
       ),
       html.a(
         [
-          attribute.href(api_url <> "/auth/logout"),
+          attribute.href(env.api_url <> "/auth/logout"),
           attribute.class(
             "border border-surface0 rounded-md px-2 py-1 hover:bg-surface0/50",
           ),
@@ -99,7 +100,7 @@ fn view_header(model: Model) -> Element(Msg) {
     None -> [
       html.a(
         [
-          attribute.href(api_url <> "/auth/login"),
+          attribute.href(env.api_url <> "/auth/login"),
           attribute.class(
             "border border-surface0 rounded-md px-2 py-1 hover:bg-surface0/50 ml-auto",
           ),
@@ -252,7 +253,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 // -----------
 
 fn get_user() -> Effect(Msg) {
-  let route = api_url <> "/auth/user"
+  let route = env.api_url <> "/auth/user"
   let expect =
     lustre_http.expect_json(dynamic.optional(user.decoder()), ApiReturnedUser)
 
@@ -260,22 +261,15 @@ fn get_user() -> Effect(Msg) {
 }
 
 fn get_posts() -> Effect(Msg) {
-  let route = api_url
+  let route = env.api_url <> "/posts"
   let expect =
     lustre_http.expect_json(dynamic.list(post.decoder()), ApiReturnedPosts)
 
-  case request.to(route) {
-    Ok(req) -> req |> lustre_http.send(expect)
-    Error(_) ->
-      effect.from(fn(dispatch) {
-        dispatch(expect.run(Error(lustre_http.BadUrl(route))))
-      })
-  }
   lustre_http.get(route, expect)
 }
 
 fn create_post(content: String) -> Effect(Msg) {
-  let route = api_url <> "/posts"
+  let route = env.api_url <> "/posts"
   let expect = lustre_http.expect_json(post.decoder(), ApiReturnedCreatedPost)
 
   lustre_http.post(
@@ -286,7 +280,7 @@ fn create_post(content: String) -> Effect(Msg) {
 }
 
 fn edit_post(id: Int, content: String) -> Effect(Msg) {
-  let route = api_url <> "/posts/" <> int.to_string(id)
+  let route = env.api_url <> "/posts/" <> int.to_string(id)
   let expect = lustre_http.expect_json(post.decoder(), ApiEditedPost)
 
   http_utils.patch(
@@ -297,7 +291,7 @@ fn edit_post(id: Int, content: String) -> Effect(Msg) {
 }
 
 fn delete_post(id: Int) -> Effect(Msg) {
-  let route = api_url <> "/posts/" <> int.to_string(id)
+  let route = env.api_url <> "/posts/" <> int.to_string(id)
   let expect = lustre_http.expect_json(post.decoder(), ApiDeletedPost)
   http_utils.delete(route, expect)
 }

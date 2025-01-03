@@ -1,4 +1,5 @@
 import decipher
+import env
 import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type Decoder, type Dynamic}
@@ -15,7 +16,7 @@ import lustre/element/html
 import lustre/event
 import lustre_http
 import model/attachment.{type Attachment}
-import utils/http.{api_url} as http_utils
+import utils/http as http_utils
 import utils/markdown
 
 pub const name: String = "stream-compose"
@@ -265,13 +266,15 @@ fn insert_upload_placeholder(content: String, cursor_position: Int) {
 }
 
 fn replace_upload_placeholder(content: String, url: String) {
-  // only in dev
-  let url =
-    string.replace(
-      url,
-      each: "http://localhost:1234",
-      with: "http://localhost:3000",
-    )
+  let url = case env.mode {
+    "development" ->
+      string.replace(
+        url,
+        each: "http://localhost:1234",
+        with: "http://localhost:3000",
+      )
+    _ -> url
+  }
 
   let replacement = "![image](" <> url <> ")"
 
@@ -279,9 +282,9 @@ fn replace_upload_placeholder(content: String, url: String) {
 }
 
 fn upload_attachment(data: Dynamic) -> Effect(Msg) {
-  let route = api_url <> "/attachments/upload"
+  let route = env.api_url <> "/attachments/upload"
   let expect =
-    lustre_http.expect_json(attachment.decoder(), ApiReturnedAttachmentLink)
+    http_utils.expect_json(attachment.decoder(), ApiReturnedAttachmentLink)
 
   effect.from(http_utils.send_form_data(route, data, expect, _))
 }

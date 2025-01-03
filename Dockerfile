@@ -9,6 +9,8 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.3.6
+ARG GLEAM_VERSION=v1.6.3
+
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -34,19 +36,25 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
-COPY Gemfile Gemfile.lock ./
+COPY server/Gemfile server/Gemfile.lock ./
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
 # Copy application code
-COPY . .
+COPY ./server .
 
 # Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+RUN bundle exec bootsnap precompile server/app/ server/lib/
 
+FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS client
 
+ARG API_URL=http://localhost:80
+ENV API_URL=${API_URL}
 
+WORKDIR /client
+COPY ./client .
+RUN chmod +x gen_env.sh && sh gen_env.sh && echo $API_URL && cat src/env.gleam && gleam run -m lustre/dev build
 
 # Final stage for app image
 FROM base
@@ -54,6 +62,9 @@ FROM base
 # Copy built artifacts: gems, application
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
+COPY --from=client /client /client
+COPY --from=client /client/index.html /rails/public/index.html
+COPY --from=client /client/priv /rails/public/priv
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \

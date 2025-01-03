@@ -1,6 +1,6 @@
 require "oauth2"
 
-ADMINS = [47371088]
+ADMINS = [ 47371088 ]
 
 class SessionsController < ApplicationController
   allow_unauthenticated_access only: %i[login authorized user]
@@ -15,7 +15,6 @@ class SessionsController < ApplicationController
     token_url: @@token_url
   )
   @@redirect_uri = ENV["GITHUB_REDIRECT_URI"]
-  @@home_url = "http://localhost:1234"
 
   def user
     render json: resume_session&.user
@@ -23,7 +22,6 @@ class SessionsController < ApplicationController
 
   def login
     oauth_url = @@oauth_client.auth_code.authorize_url(redirect_uri: @@redirect_uri, scope: "user:email")
-    puts "Redirecting to #{oauth_url}"
     redirect_to oauth_url, allow_other_host: true
   end
 
@@ -42,11 +40,11 @@ class SessionsController < ApplicationController
     user = User.find(data["id"])
 
     start_new_session_for user
-    redirect_to @@home_url, allow_other_host: true
+    redirect_to request.headers["Referer"]
   end
 
   def logout
     terminate_session
-    redirect_to @@home_url
+    redirect_to request.headers["Referer"]
   end
 end
