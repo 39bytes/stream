@@ -6,3 +6,5 @@ erl_crash.dump
 node_modules
 .env
 env.gleam
+client.mjs
+client.css

@@ -55,7 +55,7 @@ ENV API_URL=${API_URL}
 WORKDIR /client
 COPY ./client .
 RUN chmod +x gen_env.sh && sh gen_env.sh 
-RUN gleam run -m lustre/dev build --tailwind-entry=base.css
+RUN gleam run -m lustre/dev build --tailwind-entry=base.css --outdir=.
 
 # Final stage for app image
 FROM base
@@ -65,7 +65,8 @@ COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 COPY --from=client /client /client
 COPY --from=client /client/index.html /rails/public/index.html
-COPY --from=client /client/priv /rails/public/priv
+COPY --from=client /client/client.mjs /rails/public/client.mjs
+COPY --from=client /client/client.css /rails/public/client.css
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
