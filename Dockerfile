@@ -47,13 +47,23 @@ COPY ./server .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile server/app/ server/lib/
 
+FROM node:20-slim AS client-base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+COPY ./client/package.json ./package.json
+COPY ./client/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN pnpm install --frozen-lockfile
+
 FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-erlang-alpine AS client
+WORKDIR /client
+COPY ./client .
 
 ARG API_URL=http://localhost:80
 ENV API_URL=${API_URL}
 
-WORKDIR /client
-COPY ./client .
+COPY --from=client-base node_modules node_modules
 RUN chmod +x gen_env.sh && sh gen_env.sh 
 RUN gleam run -m lustre/dev build --tailwind-entry=base.css --outdir=.
 
