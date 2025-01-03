@@ -2,7 +2,11 @@
 
 rm -f src/env.gleam
 
-set -a && source ./.env || true && set +a
+set -a
+if [ -f ./.env ]; then
+    source ./.env
+fi
+set +a
 
 echo "pub const api_url = \"$API_URL\"" >>src/env.gleam
 echo "pub const mode = \"$MODE\"" >>src/env.gleam
