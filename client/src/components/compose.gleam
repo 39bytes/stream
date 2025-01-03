@@ -6,6 +6,7 @@ import gleam/dynamic.{type Decoder, type Dynamic}
 import gleam/io
 import gleam/json
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import lustre
@@ -234,14 +235,20 @@ fn view_edit_input(model: Model) -> Element(Msg) {
     use cursor_position <- result.try(
       event |> decipher.at(["target", "selectionStart"], dynamic.int),
     )
-    let data = on_paste(event)
-    let path = ["target", "value"]
-    let content =
-      event
-      |> decipher.at(path, dynamic.string)
-      |> result.unwrap(model.content)
+    let data = on_paste(event) |> dynamic.optional(dynamic.dynamic)
 
-    Ok(UserPastedAttachment(data:, cursor_position:, content:))
+    case data {
+      Ok(Some(data)) -> {
+        let path = ["target", "value"]
+        let content =
+          event
+          |> decipher.at(path, dynamic.string)
+          |> result.unwrap(model.content)
+
+        Ok(UserPastedAttachment(data:, cursor_position:, content:))
+      }
+      _ -> Error([])
+    }
   }
 
   html.textarea(
