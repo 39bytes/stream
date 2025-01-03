@@ -1,6 +1,6 @@
 require "oauth2"
 
-ADMINS = [ 47371088 ]
+ADMINS = [47371088]
 
 class SessionsController < ApplicationController
   allow_unauthenticated_access only: %i[login authorized user]

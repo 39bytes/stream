@@ -47,7 +47,7 @@ type Msg {
   UserClickedConfirm
   UserClickedCancel
   UserChangedTab(tab: Tab)
-  UserPastedAttachment(data: Dynamic, cursor_position: Int)
+  UserPastedAttachment(data: Dynamic, cursor_position: Int, content: String)
   ApiReturnedAttachmentLink(Result(Attachment, lustre_http.HttpError))
   ParentSetEdit(edit: Bool)
 }
@@ -69,11 +69,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     UserClickedCancel -> #(model, event.emit("cancel", json.null()))
     UserChangedTab(tab) -> #(Model(..model, tab:), effect.none())
-    UserPastedAttachment(attachment, cursor_position) -> {
+    UserPastedAttachment(attachment, cursor_position, content) -> {
       #(
         Model(
           ..model,
-          content: insert_upload_placeholder(model.content, cursor_position),
+          content: insert_upload_placeholder(content, cursor_position),
         ),
         upload_attachment(attachment),
       )
@@ -89,8 +89,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             effect.none(),
           )
         }
-        Error(e) -> {
-          io.debug(e)
+        Error(_) -> {
           #(model, effect.none())
         }
       }
@@ -236,8 +235,13 @@ fn view_edit_input(model: Model) -> Element(Msg) {
       event |> decipher.at(["target", "selectionStart"], dynamic.int),
     )
     let data = on_paste(event)
+    let path = ["target", "value"]
+    let content =
+      event
+      |> decipher.at(path, dynamic.string)
+      |> result.unwrap(model.content)
 
-    Ok(UserPastedAttachment(data:, cursor_position:))
+    Ok(UserPastedAttachment(data:, cursor_position:, content:))
   }
 
   html.textarea(
